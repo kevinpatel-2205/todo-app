@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="todoApp">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager</title>
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="../styles.css"/>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+</head>
+<body ng-controller="TodoController">
+
+<div class="container mt-4">
+  <!-- Add New Task -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Add New Task</h5>
+    </div>
+    <div class="card-body">
+      <form ng-submit="addTask()">
+        <div class="row">
+          <div class="col-md-6">
+            <input type="text" class="form-control" ng-model="newTask.title" placeholder="Task Title" required />
+          </div>
+          <div class="col-md-3">
+            <select class="form-control" ng-model="newTask.priority">
+              <option value="low">Low Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <input type="datetime-local" class="form-control" ng-model="newTask.dueDate" />
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-8">
+            <textarea class="form-control" ng-model="newTask.description" placeholder="Description"></textarea>
+          </div>
+          <div class="col-md-4">
+            <input type="text" class="form-control" ng-model="newTask.tags" placeholder="Tags (comma-separated)" />
+            <div class="form-check mt-2">
+              <input type="checkbox" class="form-check-input" ng-model="newTask.isRecurring" id="recurringCheck" />
+              <label class="form-check-label" for="recurringCheck">Recurring Task</label>
+            </div>
+            <select class="form-control mt-2" ng-model="newTask.recurrence" ng-if="newTask.isRecurring">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Add Task</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Task List -->
+  <div class="task-list" ui-sortable="sortableOptions" ng-model="tasks">
+    <div class="card mb-3" ng-repeat="task in tasks | filter:searchQuery | orderBy:sortBy">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <h5 class="card-title" ng-class="{'text-decoration-line-through': task.completed}">
+              {{task.title}}
+              <span class="badge" ng-class="{
+                'bg-danger': task.priority === 'high',
+                'bg-warning': task.priority === 'medium',
+                'bg-info': task.priority === 'low'
+              }">{{task.priority}}</span>
+            </h5>
+            <p class="card-text">{{task.description}}</p>
+            <div class="tags" ng-if="task.tags">
+              <span class="badge bg-secondary me-1" ng-repeat="tag in task.tags.split(',')">{{tag}}</span>
+            </div>
+            <small class="text-muted">Due: {{task.dueDate | date:'medium'}}</small>
+          </div>
+          <div class="col-md-4 text-end">
+            <button class="btn btn-sm btn-success me-2" ng-click="toggleComplete(task)">
+              <i class="fas" ng-class="{'fa-check-circle': !task.completed, 'fa-times-circle': task.completed}"></i>
+            </button>
+            <button class="btn btn-sm btn-primary me-2" ng-click="openEditModal(task)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" ng-click="deleteTask(task)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-info" ng-if="tasks.length === 0">
+    No tasks found. Add a new task to get started!
+  </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div class="modal fade" id="editTaskModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form ng-submit="updateTask()">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Task</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-control" ng-model="editingTask.title" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" ng-model="editingTask.description"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Due Date</label>
+            <input type="datetime-local" class="form-control" ng-model="editingTask.dueDate" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Priority</label>
+            <select class="form-control" ng-model="editingTask.priority">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tags</label>
+            <input type="text" class="form-control" ng-model="editingTask.tags" placeholder="comma-separated tags" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- AngularJS Core -->
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+<!-- AngularJS UI Sortable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.19.0/sortable.min.js"></script>
+
+<!-- jQuery (required by UI Sortable) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- jQuery UI (required by UI Sortable) -->
+<script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+
+<!-- Bootstrap Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Angular App Logic -->
+<script src="app.js"></script>
+
+</body>
+</html>

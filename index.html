@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html ng-app="todoApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Todo List with Authentication</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-messages.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.19.0/sortable.min.js"></script>
+    <script src="app.js"></script>
+    <script src="controllers/authController.js"></script>
+    <script src="controllers/todoController.js"></script>
+    <script src="services/authService.js"></script>
+    <script src="services/todoService.js"></script>
+    <style>
+        /* Login Input Focus */
+            .auth-box .form-control {
+                font-size: 1rem;
+                border-radius: 8px;
+                border: 1px solid #ccc;
+                padding: 12px 16px;
+                box-shadow: none;
+                transition: all 0.3s ease;
+            }
+
+            .auth-box .form-control:focus {
+                border-color: #6a11cb;
+                box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+            }
+
+            /* Login Button */
+            .auth-box .btn-primary {
+                background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                color: #fff;
+                font-weight: bold;
+                padding: 10px 24px;
+                border-radius: 6px;
+                border: none;
+                width: 100%;
+                transition: all 0.3s ease;
+            }
+
+            .auth-box .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            }
+
+    </style>
+</head>
+<body ng-controller="AuthController" ng-class="{'dark-mode': isDarkMode}">
+    <!-- Auth Section -->
+    <div ng-if="!isAuthenticated" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h2>{{isLogin ? 'Login' : 'Register'}}</h2>
+                <button class="btn btn-link" ng-click="toggleAuthMode()">
+                    {{isLogin ? 'Need an account? Register' : 'Have an account? Login'}}
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form ng-if="isLogin" ng-submit="login()" class="auth-form">
+                <div class="form-group">
+                    <input type="email" class="form-control" ng-model="loginData.email" placeholder="Email" required> <br>
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" ng-model="loginData.password" placeholder="Password" required> <br>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+
+            <!-- Register Form -->
+            <form ng-if="!isLogin" ng-submit="register()" class="auth-form">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="registerData.name" placeholder="Full Name" required> <br>
+                </div>
+                <div class="form-group">
+                    <input type="email" class="form-control" ng-model="registerData.email" placeholder="Email" required> <br>
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" ng-model="registerData.password" placeholder="Password" required> <br>
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" ng-model="registerData.confirmPassword" placeholder="Confirm Password" required><br>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div ng-if="isAuthenticated" ng-controller="TodoController">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="#">Todo App</a>
+                <div class="d-flex align-items-center">
+                    <span class="text-light me-3">Welcome, {{currentUser.name}}</span>
+                    <button class="btn btn-outline-light me-2" ng-click="toggleDarkMode()">
+                        <i class="fas" ng-class="{'fa-moon': !isDarkMode, 'fa-sun': isDarkMode}"></i>
+                    </button>
+                    <button class="btn btn-outline-light" ng-click="logout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <!-- Add Task -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Add New Task</h5>
+                </div>
+                <div class="card-body">
+                    <form ng-submit="addTask()">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" ng-model="newTask.title" placeholder="Task Title" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-control" ng-model="newTask.priority">
+                                    <option value="low">Low Priority</option>
+                                    <option value="medium">Medium Priority</option>
+                                    <option value="high">High Priority</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="datetime-local" class="form-control" ng-model="newTask.dueDate">
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-8">
+                                <textarea class="form-control" ng-model="newTask.description" placeholder="Description"></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" ng-model="newTask.tags" placeholder="Tags (comma-separated)">
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" ng-model="newTask.isRecurring">
+                                    <label class="form-check-label">Recurring Task</label>
+                                </div>
+                                <select class="form-control mt-2" ng-if="newTask.isRecurring" ng-model="newTask.recurrence">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Add Task</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Task List -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Filter Tasks</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" ng-model="searchQuery" placeholder="Search tasks...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" ng-model="statusFilter">
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" ng-model="priorityFilter">
+                                <option value="all">All Priorities</option>
+                                <option value="low">Low Priority</option>
+                                <option value="medium">Medium Priority</option>
+                                <option value="high">High Priority</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" ng-model="sortBy">
+                                <option value="-createdAt">Newest First</option>
+                                <option value="createdAt">Oldest First</option>
+                                <option value="dueDate">Due Date</option>
+                                <option value="priority">Priority</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-list" ui-sortable="sortableOptions" ng-model="tasks">
+                <div class="card mb-3" ng-repeat="task in tasks | filter:searchQuery | filter:filterByStatus | filter:filterByPriority | orderBy:sortBy">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="card-title" ng-class="{'completed': task.completed}">
+                                    {{task.title}}
+                                    <span class="badge" ng-class="{
+                                        'bg-danger': task.priority === 'high',
+                                        'bg-warning': task.priority === 'medium',
+                                        'bg-info': task.priority === 'low'
+                                    }">{{task.priority}}</span>
+                                </h5>
+                                <p class="card-text">{{task.description}}</p>
+                                <div class="tags" ng-if="task.tags">
+                                    <span class="badge bg-secondary me-1" ng-repeat="tag in task.tags.split(',')">{{tag}}</span>
+                                </div>
+                                <div class="recurring-info" ng-if="task.isRecurring">
+                                    <span class="badge bg-info me-1">
+                                        <i class="fas fa-sync-alt"></i> {{task.recurrence | capitalize}}
+                                    </span>
+                                </div>
+                                <small class="text-muted">Due: {{task.dueDate | date:'medium'}}</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button class="btn btn-sm btn-success me-2" ng-click="toggleComplete(task)">
+                                    <i class="fas" ng-class="{'fa-check-circle': !task.completed, 'fa-times-circle': task.completed}"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary me-2" ng-click="editTask(task)">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" ng-click="deleteTask(task)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editTaskModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Task</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form ng-submit="updateTask()">
+                                <div class="mb-3">
+                                    <label class="form-label">Title</label>
+                                    <input type="text" class="form-control" ng-model="editingTask.title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" ng-model="editingTask.description"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Due Date</label>
+                                    <input type="datetime-local" class="form-control" ng-model="editingTask.dueDate">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-control" ng-model="editingTask.priority">
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tags</label>
+                                    <input type="text" class="form-control" ng-model="editingTask.tags" placeholder="comma-separated tags">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Trigger modal manually -->
+    <script>
+        function showEditModal() {
+            const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>

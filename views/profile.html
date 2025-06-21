@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="todoApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../styles.css">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body ng-controller="ProfileController" ng-class="{'dark-mode': isDarkMode}">
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="profile-avatar mb-3">
+                        <i class="fas fa-user-circle fa-5x"></i>
+                    </div>
+                    <h4>{{currentUser.name}}</h4>
+                    <p class="text-muted">{{currentUser.email}}</p>
+                    <p class="text-muted">Member since: {{currentUser.createdAt | date:'mediumDate'}}</p>
+                    <button class="btn btn-primary" ng-click="startEditing()" ng-if="!isEditing">Edit Profile</button>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Task Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h3>{{taskStats.total}}</h3>
+                            <p class="text-muted">Total Tasks</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3>{{taskStats.completed}}</h3>
+                            <p class="text-muted">Completed</p>
+                        </div>
+                        <div class="col-6">
+                            <h3>{{taskStats.pending}}</h3>
+                            <p class="text-muted">Pending</p>
+                        </div>
+                        <div class="col-6">
+                            <h3>{{taskStats.overdue}}</h3>
+                            <p class="text-muted">Overdue</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <div ng-if="!isEditing">
+                        <div class="row mb-3">
+                            <div class="col-md-3"><strong>Name:</strong></div>
+                            <div class="col-md-9">{{currentUser.name}}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3"><strong>Email:</strong></div>
+                            <div class="col-md-9">{{currentUser.email}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3"><strong>Account Created:</strong></div>
+                            <div class="col-md-9">{{currentUser.createdAt | date:'medium'}}</div>
+                        </div>
+                    </div>
+
+                    <form ng-if="isEditing" ng-submit="updateProfile()">
+                        <div class="alert alert-danger" ng-if="error">{{error}}</div>
+                        <div class="alert alert-success" ng-if="success">{{success}}</div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" ng-model="editedUser.name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" ng-model="editedUser.email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control" ng-model="editedUser.password">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" ng-model="editedUser.confirmPassword">
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" ng-click="cancelEditing()">Cancel</button>
+                            <button type="submit" class="btn btn-primary" ng-disabled="isLoading">
+                                <span ng-if="isLoading" class="spinner-border spinner-border-sm me-1"></span>
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" ng-model="currentUser.emailNotifications">
+                        <label class="form-check-label" for="emailNotifications">Email Notifications</label>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="darkMode" ng-model="isDarkMode" ng-change="toggleDarkMode()">
+                        <label class="form-check-label" for="darkMode">Dark Mode</label>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">Danger Zone</h6>
+                        <p class="mb-0">Once you delete your account, there is no going back. Please be certain.</p>
+                        <button class="btn btn-danger mt-2" ng-click="deleteAccount()">Delete Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AngularJS -->
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+<script src="../app.js"></script>
+<script src="../controllers/profileController.js"></script>
+</body>
+</html>
